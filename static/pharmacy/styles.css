@@ -240,16 +240,76 @@ a {
     word-break: break-word;
 }
 
-.message {
-    margin-bottom: 12px;
+.chat-thread {
+    display: grid;
+    gap: 10px;
+    margin: 16px 0 18px;
+    padding: 14px;
+    border: 1px solid #ddd2bb;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,245,238,0.95));
 }
 
-.message.agent {
+.chat-row {
+    display: flex;
+}
+
+.chat-row.agent,
+.chat-row.system {
+    justify-content: flex-start;
+}
+
+.chat-row.patient {
+    justify-content: flex-end;
+}
+
+.chat-bubble {
+    max-width: min(78%, 760px);
+    padding: 10px 14px;
+    border-radius: 18px;
+    line-height: 1.4;
+    box-shadow: 0 6px 18px rgba(74, 58, 26, 0.06);
+}
+
+.chat-bubble strong {
+    display: inline;
+    margin-right: 4px;
+}
+
+.chat-bubble.agent {
+    background: #e9f5ed;
+    border: 1px solid #b7d5bf;
     color: #1d4d3f;
 }
 
-.message.patient {
+.chat-bubble.patient {
+    background: #f7e8d8;
+    border: 1px solid #d7b99b;
     color: #6a3f10;
+}
+
+.chat-bubble.system {
+    background: #f0f0ec;
+    border: 1px solid #d2d0c8;
+    color: #495057;
+}
+
+.chat-form {
+    gap: 12px;
+}
+
+.chat-form p {
+    margin: 0;
+}
+
+.chat-form textarea {
+    width: min(460px, 100%);
+    min-height: 88px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid #cfc3ac;
+    font: inherit;
+    resize: vertical;
 }
 
 .user-chip {
@@ -260,6 +320,16 @@ a {
 
 .error-text {
     color: #9f2c2c;
+}
+
+.provider-note {
+    margin: 12px 0 16px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #d8c59a;
+    background: #fff6dc;
+    color: #5f4a17;
+    line-height: 1.45;
 }
 
 .history-layout {

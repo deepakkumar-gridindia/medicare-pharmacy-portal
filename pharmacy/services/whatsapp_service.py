@@ -16,7 +16,11 @@ def start_whatsapp_session(session: CallSession):
         raise ValueError("Patient phone number is required for WhatsApp.")
 
     try:
-        requests.post(f"{settings.WHATSAPP_BOT_URL}/wa_clear/{phone}", timeout=30)
+        requests.post(
+            f"{settings.WHATSAPP_BOT_URL}/wa_clear/{phone}",
+            params={"session_id": session.id},
+            timeout=30,
+        )
     except Exception:
         pass
 
@@ -24,16 +28,36 @@ def start_whatsapp_session(session: CallSession):
     clean_opening = opening.replace("[END CALL]", "").strip()
     response = requests.post(
         f"{settings.WHATSAPP_BOT_URL}/wa_send",
-        json={"phone": phone, "message": clean_opening, "context": build_prompt(session.patient)},
+        json={
+            "phone": phone,
+            "message": clean_opening,
+            "context": build_prompt(session.patient),
+            "session_id": session.id,
+            "reset": True,
+        },
         timeout=30,
     )
-    response.raise_for_status()
+    if response.status_code != 200:
+        raise RuntimeError(_friendly_whatsapp_error(response))
+
+    payload = {}
+    try:
+        payload = response.json()
+    except ValueError:
+        payload = {}
+
+    if payload.get("status") and payload.get("status") != "sent":
+        raise RuntimeError(_friendly_whatsapp_error(response))
     return clean_opening
 
 
 def refresh_whatsapp_transcript(session: CallSession):
     phone = sanitized_phone(session)
-    response = requests.get(f"{settings.WHATSAPP_BOT_URL}/wa_transcript/{phone}", timeout=30)
+    response = requests.get(
+        f"{settings.WHATSAPP_BOT_URL}/wa_transcript/{phone}",
+        params={"session_id": session.id},
+        timeout=30,
+    )
     response.raise_for_status()
     return response.json().get("lines", [])
 
@@ -43,8 +67,27 @@ def send_whatsapp_closing(session: CallSession):
     closing = f"Thank you {session.patient.name.split()[0]}! Take care and stay healthy. Goodbye!"
     response = requests.post(
         f"{settings.WHATSAPP_BOT_URL}/wa_send",
-        json={"phone": phone, "message": closing, "context": ""},
+        json={"phone": phone, "message": closing, "context": "", "session_id": session.id, "reset": False},
         timeout=30,
     )
     response.raise_for_status()
     return closing
+
+
+def _friendly_whatsapp_error(response):
+    details = ""
+    try:
+        details = (response.json().get("message") or response.text or "").strip()
+    except ValueError:
+        details = (response.text or "").strip()
+    details = " ".join(details.split())
+
+    message = (
+        "WhatsApp message could not be sent. "
+        "Ask the patient to send 'Hi' to your WhatsApp bot number first, "
+        "then try again. Meta may block outbound messages if the patient "
+        "has not messaged within the last 24 hours."
+    )
+    if details:
+        message = f"{message} Provider response: {details[:220]}"
+    return message

@@ -43,9 +43,8 @@ def start_session(patient: Patient, channel: str):
 
 
 def add_patient_message(session: CallSession, message: str):
-    if session.channel != "Chat":
-        raise ValueError("Manual patient replies are only supported for Chat sessions.")
-
+    if session.channel not in {"Chat", "WhatsApp"}:
+        raise ValueError("Patient replies are only supported for Chat and WhatsApp sessions.")
     CallMessage.objects.create(session=session, role="patient", message=message)
     raw_reply = request_agent_reply(session, message)
     clean_reply = _clean_agent_message(raw_reply, session.patient)

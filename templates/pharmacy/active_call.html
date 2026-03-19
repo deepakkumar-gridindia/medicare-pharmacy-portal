@@ -12,18 +12,29 @@
     <article class="panel">
         <h3>{{ session.patient.name }} - {{ session.channel }}</h3>
         <p>Status: {{ session.status }}</p>
+        {% if session.channel == "WhatsApp" and session.status != "completed" %}
+            <div class="provider-note">
+                <strong>WhatsApp note:</strong> if the patient does not receive the first message, ask them to send
+                <strong>Hi</strong> to your WhatsApp bot number first. After the patient replies on WhatsApp, click
+                <strong>Refresh Transcript</strong> to pull the latest conversation into this page. If you are testing
+                with a local bot at <strong>127.0.0.1</strong>, Meta webhook replies will not reach your machine unless
+                you expose it through a public tunnel or deploy the bot.
+            </div>
+        {% endif %}
         {% if session.last_error %}
             <p class="error-text">Last provider error: {{ session.last_error }}</p>
         {% endif %}
-        <div class="transcript">
+        <div class="chat-thread">
             {% for message in session.messages.all %}
-                <div class="message {{ message.role }}">
-                    <strong>{{ message.role|title }}:</strong> {{ message.message }}
+                <div class="chat-row {{ message.role }}">
+                    <div class="chat-bubble {{ message.role }}">
+                        <strong>{{ message.role|title }}:</strong> {{ message.message }}
+                    </div>
                 </div>
             {% endfor %}
         </div>
         {% if session.status != "completed" and chat_channel %}
-            <form method="post" class="stack">
+            <form method="post" class="stack chat-form">
                 {% csrf_token %}
                 {{ message_form.as_p }}
                 <div class="inline-form">

@@ -2,9 +2,11 @@ from pathlib import Path
 
 from django.contrib import messages
 from django.db.models import Q
-from django.http import FileResponse, HttpResponseRedirect
+from django.http import FileResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 from pharmacy.controllers.call_controller import (
     add_patient_message,
@@ -36,7 +38,11 @@ def patient_list(request):
     if request.method == "POST":
         patient = get_object_or_404(Patient, pk=request.POST.get("patient_id"))
         if form.is_valid():
-            session = start_session(patient, form.cleaned_data["channel"])
+            try:
+                session = start_session(patient, form.cleaned_data["channel"])
+            except Exception as exc:
+                messages.error(request, str(exc))
+                return redirect("patient_list")
             return redirect("active_call", session_id=session.id)
 
     patients = Patient.objects.prefetch_related("medications").all()
@@ -208,4 +214,38 @@ def download_transcript(request, session_id):
         session.transcript_file.open("rb"),
         as_attachment=True,
         filename=session.transcript_file.name.split("/")[-1],
+    )
+
+
+@csrf_exempt
+def whatsapp_reply_api(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON payload"}, status=400)
+
+    session_id = payload.get("session_id")
+    patient_message = (payload.get("message") or "").strip()
+    if not session_id or not patient_message:
+        return JsonResponse({"error": "session_id and message are required"}, status=400)
+
+    session = get_object_or_404(CallSession.objects.select_related("patient"), pk=session_id)
+    try:
+        reply = add_patient_message(session, patient_message)
+    except Exception as exc:
+        session.last_error = str(exc)
+        session.attention_required = True
+        session.save(update_fields=["last_error", "attention_required", "updated_at"])
+        return JsonResponse({"error": str(exc)}, status=500)
+
+    session.refresh_from_db()
+    return JsonResponse(
+        {
+            "reply": reply,
+            "status": session.status,
+            "ended": session.status == "completed",
+        }
     )

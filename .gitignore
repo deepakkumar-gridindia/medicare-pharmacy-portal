@@ -5,3 +5,8 @@ staticfiles/
 __pycache__/
 *.pyc
 .DS_Store
+whatsapp_bot/.env
+whatsapp_bot/__pycache__/
+whatsapp_bot/wa_transcript_*.txt
+whatsapp_bot/wa_state.json
+whatsapp_bot/report_*.pdf

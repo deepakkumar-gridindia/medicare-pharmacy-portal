@@ -156,7 +156,8 @@ TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
 TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER", "")
 VOICE_BOT_URL = os.getenv("VOICE_BOT_URL", "https://medicare-voice-bot.onrender.com")
-WHATSAPP_BOT_URL = os.getenv("WHATSAPP_BOT_URL", "https://medicare-whatsapp-bot-v2.onrender.com")
+WHATSAPP_BOT_LOCAL_URL = "http://127.0.0.1:5001"
+WHATSAPP_BOT_URL = os.getenv("WHATSAPP_BOT_URL", WHATSAPP_BOT_LOCAL_URL)
 
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "dashboard"

@@ -1,4 +1,5 @@
 Django
+flask
 python-dotenv
 openpyxl
 fpdf2
