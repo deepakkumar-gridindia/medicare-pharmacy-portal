@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import FileResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
@@ -21,7 +20,6 @@ from pharmacy.services.dashboard import dashboard_metrics, workflow_snapshot
 from pharmacy.services.excel_sync import export_patients_to_excel, import_patients_from_excel
 
 
-@login_required
 def dashboard(request):
     context = {
         "metrics": dashboard_metrics(),
@@ -32,7 +30,6 @@ def dashboard(request):
     return render(request, "pharmacy/dashboard.html", context)
 
 
-@login_required
 def patient_list(request):
     search_query = (request.GET.get("q") or "").strip()
     form = StartCallForm(request.POST or None)
@@ -58,7 +55,6 @@ def patient_list(request):
     return render(request, "pharmacy/patient_list.html", context)
 
 
-@login_required
 def active_call(request, session_id=None):
     session = None
     if session_id:
@@ -110,7 +106,6 @@ def active_call(request, session_id=None):
     )
 
 
-@login_required
 def history_reports(request):
     search_query = (request.GET.get("q") or "").strip()
     session_queryset = CallSession.objects.select_related("patient")
@@ -167,7 +162,6 @@ def history_reports(request):
     )
 
 
-@login_required
 def excel_sync(request):
     form = ExcelUploadForm(request.POST or None, request.FILES or None)
     if request.method == "POST":
@@ -193,7 +187,6 @@ def excel_sync(request):
     return render(request, "pharmacy/excel_sync.html", {"form": ExcelUploadForm()})
 
 
-@login_required
 def download_report(request, session_id):
     session = get_object_or_404(CallSession, pk=session_id)
     if not session.report_pdf:
@@ -206,7 +199,6 @@ def download_report(request, session_id):
     )
 
 
-@login_required
 def download_transcript(request, session_id):
     session = get_object_or_404(CallSession, pk=session_id)
     if not session.transcript_file:
