@@ -5,3 +5,7 @@ fpdf2
 groq
 twilio
 requests
+dj-database-url
+gunicorn
+whitenoise
+psycopg[binary]
