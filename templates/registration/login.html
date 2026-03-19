@@ -1,0 +1,23 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | MediCare Portal</title>
+    <link rel="stylesheet" href="{% static 'pharmacy/styles.css' %}">
+</head>
+<body>
+    <main class="container">
+        <section class="hero" style="max-width: 520px; margin: 72px auto 0;">
+            <h2>Sign In</h2>
+            <p>Use your Django admin credentials to access the pharmacy operations portal.</p>
+            <form method="post" class="stack">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="button">Login</button>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

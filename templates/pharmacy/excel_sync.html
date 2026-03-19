@@ -1,0 +1,29 @@
+{% extends "pharmacy/base.html" %}
+
+{% block title %}Patient_List Sync{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h2>Patient_List Sync</h2>
+    <p>Maintain patient data in the database and keep the legacy patient list spreadsheet available as an import/export bridge.</p>
+</section>
+
+<section class="panel-grid">
+    <article class="panel">
+        <h3>Default Patient_List File</h3>
+        <form method="post" class="stack">
+            {% csrf_token %}
+            <button type="submit" name="import_default" value="1" class="button">Import Default Patient_List</button>
+            <button type="submit" name="export_default" value="1" class="button alt">Export Database to Patient_List</button>
+        </form>
+    </article>
+    <article class="panel">
+        <h3>Upload Another Patient_List File</h3>
+        <form method="post" enctype="multipart/form-data" class="stack">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="button">Upload and Import</button>
+        </form>
+    </article>
+</section>
+{% endblock %}

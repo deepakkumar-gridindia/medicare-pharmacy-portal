@@ -1,0 +1,127 @@
+{% extends "pharmacy/base.html" %}
+
+{% block title %}History and Reports{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h2>History and Reports</h2>
+    <p>Search patients by name or number, view the latest call first, and expand older records only when needed.</p>
+</section>
+
+<section class="history-search panel">
+    <form method="get" class="search-form">
+        <input
+            type="text"
+            name="q"
+            value="{{ search_query }}"
+            placeholder="Search patient by name, patient ID, or phone number"
+            class="search-input"
+        >
+        <button type="submit" class="button">Search</button>
+        {% if search_query %}
+            <a href="{% url 'history_reports' %}" class="button small alt">Clear</a>
+        {% endif %}
+    </form>
+</section>
+
+<section class="history-layout">
+    <div class="panel">
+        {% if patient_history %}
+            {% for item in patient_history %}
+                <div class="patient-history-card">
+                    <div class="patient-history-head">
+                        <div>
+                            <h3>{{ item.patient.name }} <span class="subtle">({{ item.patient.patient_id }})</span></h3>
+                            <p class="subtle">{{ item.patient.phone }} | {{ item.patient.language }}</p>
+                        </div>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Latest Call Type</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Transcript</th>
+                                    <th>Report</th>
+                                    <th>Open</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="{% if selected_session and selected_session.id == item.latest_session.id %}selected-row{% endif %}">
+                                    <td>{{ item.latest_session.channel }}</td>
+                                    <td>{{ item.latest_session.started_at|date:"d M Y H:i" }}</td>
+                                    <td>{{ item.latest_session.status }}</td>
+                                    <td>{% if item.latest_session.transcript_file %}Available{% else %}Pending{% endif %}</td>
+                                    <td>{% if item.latest_session.report_pdf %}Available{% else %}Pending{% endif %}</td>
+                                    <td><a class="button small" href="{% url 'history_reports' %}?session={{ item.latest_session.id }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">View</a></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if item.older_sessions %}
+                        <details class="history-dropdown">
+                            <summary>Older Call Records ({{ item.older_sessions|length }})</summary>
+                            <div class="table-wrap dropdown-table">
+                                <table class="history-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Call Type</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
+                                            <th>Transcript</th>
+                                            <th>Report</th>
+                                            <th>Open</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for session in item.older_sessions %}
+                                            <tr class="{% if selected_session and selected_session.id == session.id %}selected-row{% endif %}">
+                                                <td>{{ session.channel }}</td>
+                                                <td>{{ session.started_at|date:"d M Y H:i" }}</td>
+                                                <td>{{ session.status }}</td>
+                                                <td>{% if session.transcript_file %}Available{% else %}Pending{% endif %}</td>
+                                                <td>{% if session.report_pdf %}Available{% else %}Pending{% endif %}</td>
+                                                <td><a class="button small" href="{% url 'history_reports' %}?session={{ session.id }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">View</a></td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </details>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No patient history found{% if search_query %} for "{{ search_query }}"{% endif %}.</p>
+        {% endif %}
+    </div>
+
+    <div class="panel">
+        {% if selected_session %}
+            <h3>{{ selected_session.patient.name }} - {{ selected_session.channel }}</h3>
+            <p>{{ selected_session.started_at|date:"d M Y H:i" }} | {{ selected_session.status }}</p>
+            {% if selected_session.last_error %}<p class="error-text">{{ selected_session.last_error }}</p>{% endif %}
+
+            <div class="inline-form">
+                {% if selected_session.transcript_file %}
+                    <a href="{% url 'download_transcript' selected_session.id %}" class="button small">Download Transcript</a>
+                {% endif %}
+                {% if selected_session.report_pdf %}
+                    <a href="{% url 'download_report' selected_session.id %}" class="button small alt">Download Summary Report</a>
+                {% endif %}
+            </div>
+
+            <h4>Summary</h4>
+            <pre class="transcript-box">{{ selected_session.summary|default:"No summary available." }}</pre>
+
+            <h4>Transcript</h4>
+            <pre class="transcript-box">{{ selected_session.transcript_text }}</pre>
+        {% else %}
+            <p>Select a patient call record to see transcript and report details here.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

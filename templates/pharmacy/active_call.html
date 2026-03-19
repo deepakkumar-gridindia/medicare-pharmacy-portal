@@ -1,0 +1,47 @@
+{% extends "pharmacy/base.html" %}
+
+{% block title %}Active Call{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h2>Active Call</h2>
+    <p>This page is only the UI. Call handling now lives in a dedicated controller module.</p>
+</section>
+
+{% if session %}
+    <article class="panel">
+        <h3>{{ session.patient.name }} - {{ session.channel }}</h3>
+        <p>Status: {{ session.status }}</p>
+        {% if session.last_error %}
+            <p class="error-text">Last provider error: {{ session.last_error }}</p>
+        {% endif %}
+        <div class="transcript">
+            {% for message in session.messages.all %}
+                <div class="message {{ message.role }}">
+                    <strong>{{ message.role|title }}:</strong> {{ message.message }}
+                </div>
+            {% endfor %}
+        </div>
+        {% if session.status != "completed" and chat_channel %}
+            <form method="post" class="stack">
+                {% csrf_token %}
+                {{ message_form.as_p }}
+                <div class="inline-form">
+                    <button type="submit" class="button">Send Patient Reply</button>
+                    <button type="submit" class="button alt" name="end_call" value="1">End Call</button>
+                </div>
+            </form>
+        {% elif session.status != "completed" %}
+            <form method="post" class="inline-form">
+                {% csrf_token %}
+                <button type="submit" name="refresh_remote" value="1" class="button">Refresh Transcript</button>
+                <button type="submit" name="close_remote" value="1" class="button alt">Close Session</button>
+            </form>
+        {% endif %}
+    </article>
+{% else %}
+    <article class="panel">
+        <p>No active session yet. Start one from the patient list page.</p>
+    </article>
+{% endif %}
+{% endblock %}

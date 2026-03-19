@@ -1,0 +1,72 @@
+{% extends "pharmacy/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h2>Overview</h2>
+    <p>The Streamlit tabs are now mapped into separate Django pages with models, admin screens, and a service/controller split.</p>
+</section>
+
+<section class="metrics">
+    <article><strong>{{ metrics.total_patients }}</strong><span>Total Patients</span></article>
+    <article><strong>{{ metrics.refill_due }}</strong><span>Refills Due</span></article>
+    <article><strong>{{ metrics.calls_made }}</strong><span>Calls Logged</span></article>
+    <article><strong>{{ metrics.reports_generated }}</strong><span>Reports Generated</span></article>
+</section>
+
+<section class="panel-grid">
+    <article class="panel">
+        <h3>Patient Operations</h3>
+        <p>Create and update patients in admin, or use Patient_List Sync to import the existing spreadsheet.</p>
+        <a class="button" href="{% url 'patient_list' %}">Open Patients</a>
+    </article>
+    <article class="panel">
+        <h3>Recent Sessions</h3>
+        {% if recent_sessions %}
+            <ul class="simple-list">
+                {% for session in recent_sessions %}
+                    <li>{{ session.patient.name }} - {{ session.channel }} - {{ session.status }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No sessions yet.</p>
+        {% endif %}
+    </article>
+</section>
+
+<section class="panel-grid">
+    <article class="panel">
+        <h3>Priority Refills</h3>
+        {% if workflow.due_patients %}
+            <ul class="simple-list">
+                {% for patient in workflow.due_patients %}
+                    <li>{{ patient.name }} - {{ patient.refill_status }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No urgent refill follow-ups right now.</p>
+        {% endif %}
+    </article>
+    <article class="panel">
+        <h3>Operations Queue</h3>
+        {% if workflow.active_sessions %}
+            <ul class="simple-list">
+                {% for session in workflow.active_sessions %}
+                    <li><a href="{% url 'active_call' session.id %}">{{ session.patient.name }} - {{ session.channel }}</a></li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No active sessions.</p>
+        {% endif %}
+        {% if workflow.attention_sessions %}
+            <p><strong>Needs attention:</strong></p>
+            <ul class="simple-list">
+                {% for session in workflow.attention_sessions %}
+                    <li>{{ session.patient.name }} - {{ session.last_error|default:"Check provider response" }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </article>
+</section>
+{% endblock %}

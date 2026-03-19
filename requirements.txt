@@ -1,0 +1,7 @@
+Django
+python-dotenv
+openpyxl
+fpdf2
+groq
+twilio
+requests

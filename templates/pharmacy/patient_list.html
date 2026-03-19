@@ -1,0 +1,65 @@
+{% extends "pharmacy/base.html" %}
+
+{% block title %}Patient List{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h2>Patient List</h2>
+    <p>Choose a patient, review their medicines, and start a channel-specific call session.</p>
+</section>
+
+<section class="history-search panel">
+    <form method="get" class="search-form">
+        <input
+            type="text"
+            name="q"
+            value="{{ search_query }}"
+            placeholder="Search patient by name, patient ID, or phone number"
+            class="search-input"
+        >
+        <button type="submit" class="button">Search</button>
+        {% if search_query %}
+            <a href="{% url 'patient_list' %}" class="button small alt">Clear</a>
+        {% endif %}
+    </form>
+</section>
+
+<div class="patient-grid">
+    {% for patient in patients %}
+        <article class="patient-card patient-card-compact">
+            <div class="patient-card-top">
+                <div>
+                    <h3>{{ patient.name }}</h3>
+                    <p class="patient-meta">{{ patient.patient_id }} | {{ patient.language }} | {{ patient.phone }}</p>
+                </div>
+                <span class="badge patient-status-badge">{{ patient.refill_status }}</span>
+            </div>
+
+            {% if patient.last_call_remark %}
+                <div class="patient-remark">{{ patient.last_call_remark }}</div>
+            {% endif %}
+
+            <ul class="med-list med-grid">
+                {% for medication in patient.medications.all %}
+                    <li class="med-item med-{{ medication.status|default:'unknown' }}">
+                        <strong>{{ medication.drug_name }} {{ medication.dosage }}</strong>
+                        <span>{{ medication.direction|default:"-" }} | refill {{ medication.refill_due|default:"-" }}</span>
+                        {% if medication.status == "yellow" and medication.notes %}<small>{{ medication.notes }}</small>{% endif %}
+                    </li>
+                {% empty %}
+                    <li>No medication rows attached yet.</li>
+                {% endfor %}
+            </ul>
+
+            <form method="post" class="inline-form patient-card-actions">
+                {% csrf_token %}
+                <input type="hidden" name="patient_id" value="{{ patient.id }}">
+                {{ start_form.channel }}
+                <button type="submit" class="button">Start Call Session</button>
+            </form>
+        </article>
+    {% empty %}
+        <p>No patients found{% if search_query %} for "{{ search_query }}"{% endif %}. Use admin or Patient_List Sync to load them.</p>
+    {% endfor %}
+</div>
+{% endblock %}
