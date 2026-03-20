@@ -44,6 +44,14 @@
                     <li class="med-item med-{{ medication.status|default:'unknown' }}">
                         <strong>{{ medication.drug_name }} {{ medication.dosage }}</strong>
                         <span>{{ medication.direction|default:"-" }} | refill {{ medication.refill_due|default:"-" }}</span>
+                        <div class="med-read-flags">
+                            <span class="read-flag {% if medication.indication_read %}is-read{% else %}not-read{% endif %}">
+                                {% if medication.indication_read %}✓{% else %}○{% endif %} Indication
+                            </span>
+                            <span class="read-flag {% if medication.direction_read %}is-read{% else %}not-read{% endif %}">
+                                {% if medication.direction_read %}✓{% else %}○{% endif %} Direction
+                            </span>
+                        </div>
                         {% if medication.status == "yellow" and medication.notes %}<small>{{ medication.notes }}</small>{% endif %}
                     </li>
                 {% empty %}

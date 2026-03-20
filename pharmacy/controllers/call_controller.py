@@ -45,6 +45,8 @@ def start_session(patient: Patient, channel: str):
 def add_patient_message(session: CallSession, message: str):
     if session.channel not in {"Chat", "WhatsApp"}:
         raise ValueError("Patient replies are only supported for Chat and WhatsApp sessions.")
+    if session.status == "completed":
+        raise ValueError("This call is already completed.")
     CallMessage.objects.create(session=session, role="patient", message=message)
     raw_reply = request_agent_reply(session, message)
     clean_reply = _clean_agent_message(raw_reply, session.patient)
@@ -73,6 +75,22 @@ def close_remote_session(session: CallSession):
     if session.channel == "WhatsApp":
         closing = send_whatsapp_closing(session)
         CallMessage.objects.create(session=session, role="agent", message=closing)
+    finalize_session(session, status="completed")
+    return session
+
+
+def end_session_now(session: CallSession):
+    if session.status == "completed":
+        return session
+
+    if session.channel == "Chat":
+        closing = f"Thank you {session.patient.name.split()[0]}! Take care and stay healthy. Goodbye!"
+        last_agent_message = session.messages.filter(role="agent").order_by("-created_at", "-id").first()
+        if last_agent_message is None or last_agent_message.message != closing:
+            CallMessage.objects.create(session=session, role="agent", message=closing)
+    elif session.channel == "WhatsApp":
+        return close_remote_session(session)
+
     finalize_session(session, status="completed")
     return session
 

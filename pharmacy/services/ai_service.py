@@ -124,6 +124,7 @@ def build_prompt(patient: Patient):
 
 def parse_tags(text, patient: Patient):
     updated = False
+    normalized_text = _normalize_text(text)
 
     def find_tags(tag_name):
         bracketed = re.findall(r"\[" + tag_name + r":([^\]]+)\]", text or "", flags=re.IGNORECASE)
@@ -156,6 +157,19 @@ def parse_tags(text, patient: Patient):
     for drug_name in find_tags("DIR_READ"):
         for medication in patient.medications.all():
             if drug_name.lower() in medication.drug_name.lower() or medication.drug_name.lower() in drug_name.lower():
+                medication.direction_read = True
+                medication.save(update_fields=["direction_read", "updated_at"])
+                updated = True
+
+    for medication in patient.medications.exclude(status="yellow"):
+        drug_mentioned = _normalize_text(medication.drug_name) in normalized_text if medication.drug_name else False
+        if drug_mentioned and medication.indication and _normalize_text(medication.indication) in normalized_text:
+            if not medication.indication_read:
+                medication.indication_read = True
+                medication.save(update_fields=["indication_read", "updated_at"])
+                updated = True
+        if drug_mentioned and medication.direction and _normalize_text(medication.direction) in normalized_text:
+            if not medication.direction_read:
                 medication.direction_read = True
                 medication.save(update_fields=["direction_read", "updated_at"])
                 updated = True
@@ -288,3 +302,8 @@ def cleanup_new_medicine_artifacts(patient: Patient):
             medication.notes = cleaned_notes
             medication.extra_medicines = []
             medication.save(update_fields=["notes", "extra_medicines", "updated_at"])
+
+
+def _normalize_text(value):
+    cleaned = re.sub(r"[^a-z0-9]+", " ", (value or "").lower())
+    return re.sub(r"\s+", " ", cleaned).strip()

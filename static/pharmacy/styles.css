@@ -171,6 +171,31 @@ a {
     color: #5f5a4f;
 }
 
+.med-read-flags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.read-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    border: 1px solid #d6cfbf;
+    background: rgba(255, 255, 255, 0.75);
+    color: #6f6757;
+}
+
+.read-flag.is-read {
+    border-color: #88b18a;
+    background: #edf8ee;
+    color: #245a2f;
+}
+
 .med-green {
     background: #e6f4df;
     border-color: #9bc088;

@@ -8,7 +8,9 @@ from pharmacy.views.pages import (
     excel_sync,
     history_reports,
     patient_list,
+    whatsapp_event_api,
     whatsapp_reply_api,
+    whatsapp_session_details_api,
 )
 
 urlpatterns = [
@@ -21,4 +23,6 @@ urlpatterns = [
     path("reports/<int:session_id>/download/", download_report, name="download_report"),
     path("transcripts/<int:session_id>/download/", download_transcript, name="download_transcript"),
     path("api/whatsapp/reply/", whatsapp_reply_api, name="whatsapp_reply_api"),
+    path("api/whatsapp/session/<int:session_id>/", whatsapp_session_details_api, name="whatsapp_session_details_api"),
+    path("api/whatsapp/event/", whatsapp_event_api, name="whatsapp_event_api"),
 ]

@@ -43,6 +43,11 @@ class Medication(TimeStampedModel):
         ("red", "Not taking"),
         ("yellow", "New medicine"),
     ]
+    REFILL_RESPONSE_CHOICES = [
+        ("", "Not recorded"),
+        ("yes", "Yes"),
+        ("no", "No"),
+    ]
 
     patient = models.ForeignKey(
         Patient, related_name="medications", on_delete=models.CASCADE
@@ -57,6 +62,7 @@ class Medication(TimeStampedModel):
     prescriber = models.CharField(max_length=255, blank=True)
     notes = models.TextField(blank=True)
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="unknown")
+    last_refill_response = models.CharField(max_length=16, choices=REFILL_RESPONSE_CHOICES, blank=True, default="")
     extra_medicines = models.JSONField(default=list, blank=True)
 
     class Meta:

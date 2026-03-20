@@ -39,7 +39,7 @@
                 {{ message_form.as_p }}
                 <div class="inline-form">
                     <button type="submit" class="button">Send Patient Reply</button>
-                    <button type="submit" class="button alt" name="end_call" value="1">End Call</button>
+                    <button type="submit" class="button alt" name="end_call" value="1" formnovalidate>End Call</button>
                 </div>
             </form>
         {% elif session.status != "completed" %}

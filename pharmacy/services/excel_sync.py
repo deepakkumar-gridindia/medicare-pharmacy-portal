@@ -41,8 +41,11 @@ def import_patients_from_excel(file_path=None):
     headers = [str(cell.value).strip() if cell.value else "" for cell in worksheet[1]]
     created = 0
     updated = 0
+    deleted = 0
+    removed_medications = 0
     rows = 0
     touched_patients = set()
+    imported_medications = {}
 
     def get_value(row, name):
         try:
@@ -79,24 +82,51 @@ def import_patients_from_excel(file_path=None):
         if isinstance(refill_due, datetime):
             refill_due = refill_due.date()
 
-        Medication.objects.update_or_create(
-            patient=patient,
-            drug_name=str(get_value(row, "drug_name") or "").strip(),
-            dosage=str(get_value(row, "dosage") or "").strip(),
-            defaults={
-                "indication": str(get_value(row, "Indication") or "").strip(),
-                "direction": str(get_value(row, "Direction") or "").strip(),
-                "refill_due": refill_due,
-                "indication_read": bool(get_value(row, "Indication_Read") or False),
-                "direction_read": bool(get_value(row, "Direction_Read") or False),
-                "prescriber": str(get_value(row, "Prescriber") or "").strip(),
-                "notes": str(get_value(row, "notes") or "").strip(),
-            },
-        )
+        drug_name = str(get_value(row, "drug_name") or "").strip()
+        dosage = str(get_value(row, "dosage") or "").strip()
+        if drug_name:
+            Medication.objects.update_or_create(
+                patient=patient,
+                drug_name=drug_name,
+                dosage=dosage,
+                defaults={
+                    "indication": str(get_value(row, "Indication") or "").strip(),
+                    "direction": str(get_value(row, "Direction") or "").strip(),
+                    "refill_due": refill_due,
+                    "indication_read": bool(get_value(row, "Indication_Read") or False),
+                    "direction_read": bool(get_value(row, "Direction_Read") or False),
+                    "prescriber": str(get_value(row, "Prescriber") or "").strip(),
+                    "notes": str(get_value(row, "notes") or "").strip(),
+                },
+            )
+            imported_medications.setdefault(patient.patient_id, set()).add((drug_name.casefold(), dosage.casefold()))
         rows += 1
         touched_patients.add(patient_id)
 
-    return {"created": created, "updated": updated, "rows": rows, "patients": len(touched_patients)}
+    for patient_id in touched_patients:
+        patient = Patient.objects.prefetch_related("medications").get(patient_id=patient_id)
+        valid_keys = imported_medications.get(patient_id, set())
+        for medication in patient.medications.exclude(status="yellow"):
+            med_key = (medication.drug_name.casefold(), medication.dosage.casefold())
+            if med_key not in valid_keys:
+                medication.delete()
+                removed_medications += 1
+
+    stale_patients = Patient.objects.exclude(patient_id__in=touched_patients)
+    for patient in stale_patients:
+        if patient.call_sessions.exists():
+            continue
+        patient.delete()
+        deleted += 1
+
+    return {
+        "created": created,
+        "updated": updated,
+        "deleted": deleted,
+        "removed_medications": removed_medications,
+        "rows": rows,
+        "patients": len(touched_patients),
+    }
 
 
 def export_patients_to_excel(file_path=None):

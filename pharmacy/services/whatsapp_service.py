@@ -2,8 +2,6 @@ import requests
 from django.conf import settings
 
 from pharmacy.models import CallSession
-from pharmacy.services.ai_service import build_prompt
-from pharmacy.services.groq_service import opening_message
 
 
 def sanitized_phone(session: CallSession):
@@ -24,14 +22,12 @@ def start_whatsapp_session(session: CallSession):
     except Exception:
         pass
 
-    opening = opening_message(session)
-    clean_opening = opening.replace("[END CALL]", "").strip()
     response = requests.post(
         f"{settings.WHATSAPP_BOT_URL}/wa_send",
         json={
             "phone": phone,
-            "message": clean_opening,
-            "context": build_prompt(session.patient),
+            "message": "",
+            "context": "",
             "session_id": session.id,
             "reset": True,
         },
@@ -48,7 +44,7 @@ def start_whatsapp_session(session: CallSession):
 
     if payload.get("status") and payload.get("status") != "sent":
         raise RuntimeError(_friendly_whatsapp_error(response))
-    return clean_opening
+    return (payload.get("sent_message") or "").strip()
 
 
 def refresh_whatsapp_transcript(session: CallSession):

@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 from django.contrib import messages
 from django.db.models import Q
@@ -6,18 +7,19 @@ from django.http import FileResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
-import json
 
 from pharmacy.controllers.call_controller import (
     add_patient_message,
     close_remote_session,
+    end_session_now,
     finalize_session,
+    _refresh_transcript,
     refresh_remote_session,
     start_session,
 )
 from pharmacy.forms import CallMessageForm, ExcelUploadForm, StartCallForm
-from pharmacy.models import CallSession, Patient
-from pharmacy.services.ai_service import build_summary_from_session
+from pharmacy.models import CallMessage, CallSession, Patient
+from pharmacy.services.ai_service import build_summary_from_session, parse_tags
 from pharmacy.services.dashboard import dashboard_metrics, workflow_snapshot
 from pharmacy.services.excel_sync import export_patients_to_excel, import_patients_from_excel
 
@@ -82,7 +84,7 @@ def active_call(request, session_id=None):
                 messages.error(request, str(exc))
             return HttpResponseRedirect(reverse("active_call", args=[session.id]))
         if "end_call" in request.POST:
-            finalize_session(session)
+            end_session_now(session)
             messages.success(request, "Call completed and report files were generated.")
             return HttpResponseRedirect(reverse("active_call", args=[session.id]))
         if "close_remote" in request.POST:
@@ -173,7 +175,11 @@ def excel_sync(request):
     if request.method == "POST":
         if "import_default" in request.POST:
             result = import_patients_from_excel()
-            messages.success(request, f"Imported {result['rows']} rows from the default Patient_List file.")
+            messages.success(
+                request,
+                f"Imported {result['rows']} rows across {result['patients']} patients. "
+                f"Removed {result['removed_medications']} stale medication rows and {result['deleted']} stale patients.",
+            )
             return redirect("excel_sync")
         if "export_default" in request.POST:
             path = export_patients_to_excel()
@@ -187,7 +193,11 @@ def excel_sync(request):
                     file_handle.write(chunk)
             result = import_patients_from_excel(temp_path)
             temp_path.unlink(missing_ok=True)
-            messages.success(request, f"Imported {result['rows']} rows from uploaded Patient_List file.")
+            messages.success(
+                request,
+                f"Imported {result['rows']} rows across {result['patients']} patients. "
+                f"Removed {result['removed_medications']} stale medication rows and {result['deleted']} stale patients.",
+            )
             return redirect("excel_sync")
 
     return render(request, "pharmacy/excel_sync.html", {"form": ExcelUploadForm()})
@@ -247,5 +257,104 @@ def whatsapp_reply_api(request):
             "reply": reply,
             "status": session.status,
             "ended": session.status == "completed",
+        }
+    )
+
+
+@csrf_exempt
+def whatsapp_session_details_api(request, session_id):
+    if request.method != "GET":
+        return JsonResponse({"error": "GET required"}, status=405)
+
+    session = get_object_or_404(
+        CallSession.objects.select_related("patient").prefetch_related("patient__medications"),
+        pk=session_id,
+    )
+    medications = []
+    for medication in session.patient.medications.order_by("id"):
+        medications.append(
+            {
+                "name": medication.drug_name,
+                "dosage": medication.dosage,
+                "indication": medication.indication,
+                "direction": medication.direction,
+                "refill_due": medication.refill_due.isoformat() if medication.refill_due else "",
+                "status": medication.status,
+                "recently_added": "patient mentioned" in (medication.indication or "").lower(),
+                "last_refill_response": medication.last_refill_response,
+            }
+        )
+
+    return JsonResponse(
+        {
+            "session_id": session.id,
+            "patient": {
+                "patient_id": session.patient.patient_id,
+                "name": session.patient.name,
+                "phone": session.patient.phone,
+                "language": session.patient.language,
+                "medications": medications,
+            },
+        }
+    )
+
+
+@csrf_exempt
+def whatsapp_event_api(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON payload"}, status=400)
+
+    session_id = payload.get("session_id")
+    role = (payload.get("role") or "").strip().lower()
+    message = (payload.get("message") or "").strip()
+    medication_name = (payload.get("medication_name") or "").strip()
+    indication_read = bool(payload.get("indication_read"))
+    direction_read = bool(payload.get("direction_read"))
+    status_value = (payload.get("status") or "").strip().lower()
+    refill_response = (payload.get("refill_response") or "").strip().lower()
+    finalize = bool(payload.get("finalize"))
+
+    if not session_id:
+        return JsonResponse({"error": "session_id is required"}, status=400)
+    if role not in {"agent", "patient", "system", ""}:
+        return JsonResponse({"error": "Unsupported role"}, status=400)
+
+    session = get_object_or_404(CallSession.objects.select_related("patient"), pk=session_id)
+
+    if message and role:
+        CallMessage.objects.create(session=session, role=role, message=message)
+
+    tag_parts = []
+    if medication_name:
+        if indication_read:
+            tag_parts.append(f"[IND_READ:{medication_name}]")
+        if direction_read:
+            tag_parts.append(f"[DIR_READ:{medication_name}]")
+        if status_value in {"green", "red", "yellow"}:
+            tag_parts.append(f"[{status_value.upper()}:{medication_name}]")
+    if tag_parts:
+        parse_tags(" ".join(tag_parts), session.patient)
+
+    if medication_name and refill_response in {"yes", "no"}:
+        medication = session.patient.medications.filter(drug_name__iexact=medication_name).order_by("id").first()
+        if medication:
+            medication.last_refill_response = refill_response
+            medication.save(update_fields=["last_refill_response", "updated_at"])
+
+    _refresh_transcript(session)
+    if finalize and session.status != "completed":
+        finalize_session(session)
+        session.refresh_from_db()
+
+    return JsonResponse(
+        {
+            "status": session.status,
+            "completed": session.status == "completed",
+            "message_count": session.messages.count(),
         }
     )

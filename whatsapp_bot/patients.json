@@ -1,5 +1,72 @@
-{
-  "+919741046210": {
+[
+  {
+    "patient_id": "P001",
+    "name": "Ramesh Kumar",
+    "age": "59",
+    "phone": "+919741046210",
+    "language": "English",
+    "drugs": [
+      {
+        "drug_name": "Metformin",
+        "dosage": "500mg",
+        "indication": "Diabetes",
+        "direction": "Take once daily",
+        "refill_due": "2026-03-18",
+        "prescriber": "Shivani"
+      },
+      {
+        "drug_name": "Amlodipine",
+        "dosage": "5mg",
+        "indication": "Blood Pressure",
+        "direction": "Twice daily",
+        "refill_due": "2026-03-25",
+        "prescriber": "Shekhar"
+      },
+      {
+        "drug_name": "Paracetamol",
+        "dosage": "",
+        "indication": "Patient mentioned a new medicine during follow-up",
+        "direction": "Patient-reported",
+        "refill_due": "",
+        "prescriber": ""
+      }
+    ]
+  },
+  {
+    "patient_id": "P002",
+    "name": "Sunita Mehta",
+    "age": "45",
+    "phone": "+919741046210",
+    "language": "English",
+    "drugs": [
+      {
+        "drug_name": "Atorvastatin",
+        "dosage": "10mg",
+        "indication": "Cholestrol",
+        "direction": "Twice daily",
+        "refill_due": "2026-03-20",
+        "prescriber": "Deepak"
+      },
+      {
+        "drug_name": "Metformin",
+        "dosage": "500mg",
+        "indication": "Diabetes",
+        "direction": "Twice daily",
+        "refill_due": "2026-03-19",
+        "prescriber": "Deepak"
+      },
+      {
+        "drug_name": "Paracetamol",
+        "dosage": "",
+        "indication": "Patient mentioned a new medicine during follow-up",
+        "direction": "Patient-reported",
+        "refill_due": "",
+        "prescriber": ""
+      }
+    ]
+  },
+  {
+    "patient_id": "P003",
     "name": "Arjun Patel",
     "age": "67",
     "phone": "+919741046210",
@@ -20,8 +87,40 @@
         "direction": "Twice daily",
         "refill_due": "2026-03-22",
         "prescriber": "Deepshi"
+      },
+      {
+        "drug_name": "Dolo",
+        "dosage": "650 mg",
+        "indication": "Patient mentioned a new medicine during follow-up",
+        "direction": "Patient-reported",
+        "refill_due": "",
+        "prescriber": ""
       }
-    ],
-    "patient_id": "P003"
+    ]
+  },
+  {
+    "patient_id": "P004",
+    "name": "Deepak Kumar",
+    "age": "35",
+    "phone": "+919741046210",
+    "language": "English",
+    "drugs": [
+      {
+        "drug_name": "Amlodipine",
+        "dosage": "5mg",
+        "indication": "Blood Pressure",
+        "direction": "Twice daily",
+        "refill_due": "2026-03-25",
+        "prescriber": "Shekhar"
+      },
+      {
+        "drug_name": "Metformin",
+        "dosage": "500mg",
+        "indication": "Diabetes",
+        "direction": "Take once daily",
+        "refill_due": "2026-03-18",
+        "prescriber": "Shivani"
+      }
+    ]
   }
-}
+]
