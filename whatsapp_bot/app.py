@@ -8,8 +8,11 @@ from dotenv import load_dotenv
 from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+CALL_TRANSCRIPTS_DIR = os.path.join(PROJECT_ROOT, "call transcripts")
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 STATE_FILE = os.path.join(BASE_DIR, "wa_state.json")
+os.makedirs(CALL_TRANSCRIPTS_DIR, exist_ok=True)
 
 app = Flask(__name__)
 
@@ -475,7 +478,7 @@ def get_django_reply(session_id, patient_message):
 
 def transcript_file(key):
     safe_key = re.sub(r"[^A-Za-z0-9_-]+", "_", str(key))
-    return os.path.join(BASE_DIR, "wa_transcript_" + safe_key + ".txt")
+    return os.path.join(CALL_TRANSCRIPTS_DIR, "wa_transcript_" + safe_key + ".txt")
 
 # ── Serious symptoms ──────────────────────────────────────
 SERIOUS = ["chest pain","breathless","unconscious","faint","bleeding",

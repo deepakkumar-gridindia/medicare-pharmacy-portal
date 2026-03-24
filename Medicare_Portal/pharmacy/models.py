@@ -1,6 +1,11 @@
 from django.db import models
 from django.utils import timezone
 
+from pharmacy.storage import ProjectRootStorage
+
+
+ARTIFACT_STORAGE = ProjectRootStorage()
+
 
 class TimeStampedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -104,8 +109,8 @@ class CallSession(TimeStampedModel):
     external_call_sid = models.CharField(max_length=64, blank=True)
     last_error = models.TextField(blank=True)
     attention_required = models.BooleanField(default=False)
-    report_pdf = models.FileField(upload_to="reports/", blank=True)
-    transcript_file = models.FileField(upload_to="transcripts/", blank=True)
+    report_pdf = models.FileField(upload_to="reports/", storage=ARTIFACT_STORAGE, blank=True)
+    transcript_file = models.FileField(upload_to="call transcripts/", storage=ARTIFACT_STORAGE, blank=True)
 
     class Meta:
         ordering = ["-started_at"]

@@ -3,6 +3,7 @@ services:
     name: medicare-pharmacy-portal
     runtime: python
     plan: free
+    rootDir: Medicare_Portal
     autoDeployTrigger: commit
     buildCommand: ./build.sh
     startCommand: gunicorn medicare_portal.wsgi:application --bind 0.0.0.0:$PORT

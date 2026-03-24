@@ -6,7 +6,8 @@ from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR.parent / ".env")
+PROJECT_ROOT = BASE_DIR.parent
+load_dotenv(PROJECT_ROOT / ".env")
 
 
 # Quick-start development settings - unsuitable for production
@@ -148,15 +149,17 @@ STORAGES = {
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-EXCEL_SYNC_FILE = BASE_DIR.parent / 'patient_list.xlsx'
-LEGACY_CALL_LOG_FILE = BASE_DIR.parent / 'call_log.json'
+REPORTS_ROOT = PROJECT_ROOT / 'reports'
+CALL_TRANSCRIPTS_ROOT = PROJECT_ROOT / 'call transcripts'
+EXCEL_SYNC_FILE = PROJECT_ROOT / 'patient_list.xlsx'
+LEGACY_CALL_LOG_FILE = PROJECT_ROOT / 'call_log.json'
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
 TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER", "")
 VOICE_BOT_URL = os.getenv("VOICE_BOT_URL", "https://medicare-voice-bot.onrender.com")
-WHATSAPP_BOT_LOCAL_URL = "http://127.0.0.1:8001"
+WHATSAPP_BOT_LOCAL_URL = "http://127.0.0.1:5001"
 WHATSAPP_BOT_URL = os.getenv("WHATSAPP_BOT_URL", WHATSAPP_BOT_LOCAL_URL)
 
 LOGIN_URL = "login"
