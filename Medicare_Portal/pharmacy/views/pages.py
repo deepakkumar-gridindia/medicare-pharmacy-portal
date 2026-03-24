@@ -1,4 +1,3 @@
-from pathlib import Path
 import json
 
 from django.contrib import messages
@@ -21,7 +20,12 @@ from pharmacy.forms import CallMessageForm, ExcelUploadForm, StartCallForm
 from pharmacy.models import CallMessage, CallSession, Patient
 from pharmacy.services.ai_service import build_summary_from_session, parse_tags
 from pharmacy.services.dashboard import dashboard_metrics, workflow_snapshot
-from pharmacy.services.excel_sync import export_patients_to_excel, import_patients_from_excel
+from pharmacy.services.excel_sync import (
+    excel_file_path,
+    export_patients_to_excel,
+    import_patients_from_excel,
+    save_uploaded_excel,
+)
 
 
 def dashboard(request):
@@ -178,7 +182,8 @@ def excel_sync(request):
             messages.success(
                 request,
                 f"Imported {result['rows']} rows across {result['patients']} patients. "
-                f"Removed {result['removed_medications']} stale medication rows and {result['deleted']} stale patients.",
+                f"Removed {result['removed_medications']} stale medication rows and {result['deleted']} stale patients. "
+                f"Source file: {excel_file_path().name}.",
             )
             return redirect("excel_sync")
         if "export_default" in request.POST:
@@ -187,16 +192,13 @@ def excel_sync(request):
             return redirect("excel_sync")
         if form.is_valid():
             upload = form.cleaned_data["excel_file"]
-            temp_path = Path(__file__).resolve().parent.parent.parent / Path(upload.name).name
-            with open(temp_path, "wb") as file_handle:
-                for chunk in upload.chunks():
-                    file_handle.write(chunk)
-            result = import_patients_from_excel(temp_path)
-            temp_path.unlink(missing_ok=True)
+            saved_path = save_uploaded_excel(upload)
+            result = import_patients_from_excel(saved_path)
             messages.success(
                 request,
                 f"Imported {result['rows']} rows across {result['patients']} patients. "
-                f"Removed {result['removed_medications']} stale medication rows and {result['deleted']} stale patients.",
+                f"Removed {result['removed_medications']} stale medication rows and {result['deleted']} stale patients. "
+                f"Updated source file: {saved_path.name}.",
             )
             return redirect("excel_sync")
 

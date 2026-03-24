@@ -30,6 +30,15 @@ def excel_file_path():
     return Path(settings.EXCEL_SYNC_FILE)
 
 
+def save_uploaded_excel(upload):
+    path = excel_file_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "wb") as file_handle:
+        for chunk in upload.chunks():
+            file_handle.write(chunk)
+    return path
+
+
 @transaction.atomic
 def import_patients_from_excel(file_path=None):
     path = Path(file_path or excel_file_path())

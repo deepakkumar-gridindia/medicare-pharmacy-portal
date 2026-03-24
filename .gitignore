@@ -2,6 +2,7 @@
 !.gitignore
 !README.md
 !render.yaml
+!patient_list.xlsx
 !Medicare_Portal/
 !Medicare_Portal/**
 !whatsapp_bot/
